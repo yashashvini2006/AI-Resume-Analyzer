@@ -9,7 +9,9 @@ descriptions using ATS-style matching.
 [https://YOUR-APP-URL.streamlit.app](https://ai-resume-analyzer-fwpycck3rtpdcbwjbbvtfs.streamlit.app/)
 
 ## ✨ Features
+## 🖼️ Application Preview
 
+![AI Resume Analyzer](.resume analyzer.png)
 - 📄 Upload resume in PDF format
 - 🧑‍💻 Automatic skill detection
 - 📊 Resume score
