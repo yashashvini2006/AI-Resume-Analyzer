@@ -11,7 +11,7 @@ descriptions using ATS-style matching.
 ## ✨ Features
 ## 🖼️ Application Preview
 
-![AI Resume Analyzer](.Screenshot_2026-08-24 160404.png)
+![AI Resume Analyzer](./image.png)
 - 📄 Upload resume in PDF format
 - 🧑‍💻 Automatic skill detection
 - 📊 Resume score
