@@ -29,6 +29,8 @@ st.set_page_config(
 api_key = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=api_key)
 
+model = genai.GenerativeModel("gemini-3.6-flash")
+
 
 # =========================
 # CUSTOM CSS
@@ -49,13 +51,6 @@ st.markdown("""
     text-align: center;
     font-size: 18px;
     margin-bottom: 30px;
-}
-
-.info-box {
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    margin: 15px 0;
 }
 
 div.stButton > button {
@@ -102,7 +97,7 @@ st.markdown(
 
 
 # =========================
-# UPLOAD RESUME
+# RESUME UPLOAD
 # =========================
 
 st.subheader("📄 Upload Your Resume")
@@ -127,7 +122,7 @@ job_description = st.text_area(
 
 
 # =========================
-# ANALYZE BUTTON
+# ANALYZE
 # =========================
 
 if uploaded_file is not None:
@@ -149,8 +144,12 @@ if uploaded_file is not None:
             page_text = page.extract_text()
 
             if page_text:
-                resume_text += page_text
+                resume_text += page_text + "\n"
 
+
+        # =========================
+        # CHECK PDF
+        # =========================
 
         if not resume_text.strip():
 
@@ -158,205 +157,174 @@ if uploaded_file is not None:
                 "❌ Could not extract text from this PDF."
             )
 
-        else:
-
-            text = resume_text.lower()
+            st.stop()
 
 
-            # =========================
-            # SKILLS
-            # =========================
-
-            skills = [
-                "python",
-                "java",
-                "c",
-                "c++",
-                "sql",
-                "html",
-                "css",
-                "javascript",
-                "react",
-                "machine learning",
-                "data science",
-                "excel",
-                "power bi",
-                "tableau",
-                "communication",
-                "leadership"
-            ]
-
-            found_skills = []
-
-            for skill in skills:
-
-                if skill in text:
-                    found_skills.append(skill)
+        text = resume_text.lower()
 
 
-            # =========================
-            # SKILLS DISPLAY
-            # =========================
+        # =========================
+        # SKILLS
+        # =========================
 
-            st.subheader("🧑‍💻 Skills Detected")
+        skills = [
+            "python",
+            "java",
+            "c",
+            "c++",
+            "sql",
+            "html",
+            "css",
+            "javascript",
+            "react",
+            "machine learning",
+            "data science",
+            "excel",
+            "power bi",
+            "tableau",
+            "communication",
+            "leadership"
+        ]
 
-            if found_skills:
+        found_skills = []
 
-                for skill in found_skills:
+        for skill in skills:
 
-                    st.success(
-                        "✓ " + skill.title()
-                    )
-
-            else:
-
-                st.warning(
-                    "No matching skills found."
-                )
-
-
-            # =========================
-            # RESUME SCORE
-            # =========================
-
-            score = min(
-                len(found_skills) * 5,
-                100
-            )
-
-            st.subheader("📊 Resume Score")
-
-            st.progress(
-                score / 100
-            )
-
-            st.metric(
-                "Resume Score",
-                f"{score}/100"
-            )
+            if skill in text:
+                found_skills.append(skill)
 
 
-            # =========================
-            # RECOMMENDED SKILLS
-            # =========================
+        # =========================
+        # SKILLS DISPLAY
+        # =========================
 
-            st.subheader(
-                "💡 Recommended Skills"
-            )
+        st.subheader("🧑‍💻 Skills Detected")
 
-            recommended_skills = [
-                "Python",
-                "SQL",
-                "Machine Learning",
-                "Communication",
-                "Data Analysis"
-            ]
+        if found_skills:
 
-            missing_skills = []
-
-            for skill in recommended_skills:
-
-                if skill.lower() not in text:
-                    missing_skills.append(skill)
-
-
-            if missing_skills:
-
-                for skill in missing_skills:
-
-                    st.info(
-                        "➕ " + skill
-                    )
-
-            else:
+            for skill in found_skills:
 
                 st.success(
-                    "🎉 Your resume contains all recommended skills!"
+                    "✓ " + skill.title()
                 )
 
+        else:
 
-            # =========================
-            # GEMINI AI FEEDBACK
-            # =========================
-
-            st.subheader(
-                "🤖 AI Resume Feedback"
+            st.warning(
+                "No matching skills found."
             )
 
-            model = genai.GenerativeModel(
-                "gemini-3.6-flash"
+
+        # =========================
+        # RESUME SCORE
+        # =========================
+
+        score = min(
+            len(found_skills) * 5,
+            100
+        )
+
+        st.subheader("📊 Resume Score")
+
+        st.progress(score / 100)
+
+        st.metric(
+            "Resume Score",
+            f"{score}/100"
+        )
+
+
+        # =========================
+        # RECOMMENDED SKILLS
+        # =========================
+
+        st.subheader(
+            "💡 Recommended Skills"
+        )
+
+        recommended_skills = [
+            "Python",
+            "SQL",
+            "Machine Learning",
+            "Communication",
+            "Data Analysis"
+        ]
+
+        missing_skills = []
+
+        for skill in recommended_skills:
+
+            if skill.lower() not in text:
+
+                missing_skills.append(skill)
+
+
+        if missing_skills:
+
+            for skill in missing_skills:
+
+                st.info(
+                    "➕ " + skill
+                )
+
+        else:
+
+            st.success(
+                "🎉 Your resume contains all recommended skills!"
             )
 
-            prompt = f"""
-Analyze this resume and provide professional feedback.
 
-Give:
+        # =========================
+        # AI ANALYSIS
+        # ONE GEMINI CALL ONLY
+        # =========================
 
-1. Resume Summary
-2. Strengths
-3. Weaknesses
-4. Missing Skills
-5. Improvement Suggestions
+        st.subheader(
+            "🤖 AI Resume Feedback"
+        )
 
-Keep the feedback simple and useful for a student/fresher.
-
-Resume:
-
-{resume_text}
-"""
-
-            ai_feedback = ""
-
-            try:
-
-                response = model.generate_content(
-                    prompt
-                )
-
-                ai_feedback = response.text
-
-                st.write(
-                    ai_feedback
-                )
-
-            except Exception as e:
-
-                ai_feedback = (
-                    "AI analysis could not be generated."
-                )
-
-                st.error(
-                    "AI analysis failed"
-                )
-
-                st.write(e)
+        ats_text = ""
+        ai_feedback = ""
+        ats_score = 0
 
 
-            # =========================
-            # ATS ANALYSIS
-            # =========================
+        if job_description.strip():
 
-            ats_text = ""
-            ats_score = 0
+            combined_prompt = f"""
+You are a professional resume and ATS analyzer.
 
-            if job_description.strip():
+Analyze the following resume against the job description.
 
-                st.subheader(
-                    "🎯 ATS Match Analysis"
-                )
-
-                ats_prompt = f"""
-Compare this resume with the job description.
-
-Resume:
-
+RESUME:
 {resume_text}
 
-Job Description:
-
+JOB DESCRIPTION:
 {job_description}
 
-Return your answer EXACTLY in this format:
+Return the answer EXACTLY using these sections:
+
+RESUME SUMMARY:
+Write a short professional summary.
+
+STRENGTHS:
+- strength 1
+- strength 2
+- strength 3
+
+WEAKNESSES:
+- weakness 1
+- weakness 2
+- weakness 3
+
+MISSING SKILLS:
+- skill 1
+- skill 2
+- skill 3
+
+IMPROVEMENT SUGGESTIONS:
+- suggestion 1
+- suggestion 2
+- suggestion 3
 
 ATS SCORE: <number between 0 and 100>
 
@@ -365,7 +333,7 @@ MATCHING SKILLS:
 - skill 2
 - skill 3
 
-MISSING SKILLS:
+ATS MISSING SKILLS:
 - skill 1
 - skill 2
 - skill 3
@@ -375,308 +343,372 @@ MISSING KEYWORDS:
 - keyword 2
 - keyword 3
 
-SUGGESTIONS:
+ATS SUGGESTIONS:
 - suggestion 1
 - suggestion 2
 - suggestion 3
+
+Keep the language simple and useful for a student/fresher.
 """
 
-                try:
+        else:
 
-                    ats_response = model.generate_content(
-                        ats_prompt
+            combined_prompt = f"""
+You are a professional resume analyzer.
+
+Analyze the following resume.
+
+RESUME:
+{resume_text}
+
+Return the answer EXACTLY using these sections:
+
+RESUME SUMMARY:
+Write a short professional summary.
+
+STRENGTHS:
+- strength 1
+- strength 2
+- strength 3
+
+WEAKNESSES:
+- weakness 1
+- weakness 2
+- weakness 3
+
+MISSING SKILLS:
+- skill 1
+- skill 2
+- skill 3
+
+IMPROVEMENT SUGGESTIONS:
+- suggestion 1
+- suggestion 2
+- suggestion 3
+
+Do not provide ATS analysis because no job description was supplied.
+
+Keep the language simple and useful for a student/fresher.
+"""
+
+
+        # =========================
+        # GEMINI REQUEST
+        # =========================
+
+        try:
+
+            with st.spinner(
+                "🤖 AI is analyzing your resume..."
+            ):
+
+                response = model.generate_content(
+                    combined_prompt
+                )
+
+            result_text = response.text
+
+
+            # =========================
+            # DISPLAY AI FEEDBACK
+            # =========================
+
+            st.markdown(
+                result_text
+            )
+
+
+            # =========================
+            # SAVE AI FEEDBACK
+            # =========================
+
+            ai_feedback = result_text
+
+
+            # =========================
+            # ATS SCORE
+            # =========================
+
+            if job_description.strip():
+
+                score_match = re.search(
+                    r"ATS\s*SCORE\s*:\s*(\d+)",
+                    result_text,
+                    re.IGNORECASE
+                )
+
+                if score_match:
+
+                    ats_score = int(
+                        score_match.group(1)
                     )
 
-                    ats_text = ats_response.text
-
-
-                    # =========================
-                    # ATS SCORE
-                    # =========================
-
-                    score_match = re.search(
-                        r"ATS SCORE\s*:\s*(\d+)",
-                        ats_text,
-                        re.IGNORECASE
-                    )
-
-                    if score_match:
-
-                        ats_score = int(
-                            score_match.group(1)
-                        )
-
-                        ats_score = min(
-                            max(ats_score, 0),
-                            100
-                        )
-
-                        st.metric(
-                            "🎯 ATS Match Score",
-                            f"{ats_score}/100"
-                        )
-
-                        st.progress(
-                            ats_score / 100
-                        )
-
-                    else:
-
-                        st.warning(
-                            "Could not detect ATS score."
-                        )
-
-
-                    # =========================
-                    # ATS DETAILS
-                    # =========================
-
-                    st.markdown(
-                        "### 📋 Detailed ATS Analysis"
-                    )
-
-                    st.write(
-                        ats_text
+                    ats_score = min(
+                        max(ats_score, 0),
+                        100
                     )
 
 
-                except Exception as e:
-
-                    st.error(
-                        "ATS analysis failed"
+                    st.subheader(
+                        "🎯 ATS Match Score"
                     )
 
-                    st.write(e)
+                    st.metric(
+                        "ATS Match Score",
+                        f"{ats_score}/100"
+                    )
+
+                    st.progress(
+                        ats_score / 100
+                    )
+
+
+                    st.success(
+                        "✅ ATS analysis completed successfully!"
+                    )
+
+                else:
+
+                    st.warning(
+                        "⚠️ ATS score could not be detected."
+                    )
+
+
+        # =========================
+        # API ERROR
+        # =========================
+
+        except Exception as e:
+
+            error_text = str(e)
+
+            if "429" in error_text or "ResourceExhausted" in error_text:
+
+                st.error(
+                    "⚠️ Gemini API quota exceeded."
+                )
+
+                st.info(
+                    "Please wait for the quota to reset and try again."
+                )
 
             else:
 
-                st.info(
-                    "💡 Paste a job description to get ATS analysis."
+                st.error(
+                    "❌ AI analysis failed."
+                )
+
+                st.write(
+                    error_text
                 )
 
 
-            # =========================
-            # PDF REPORT
-            # =========================
+        # =========================
+        # PDF REPORT
+        # =========================
 
-            st.subheader(
-                "📥 Download Your Report"
+        st.subheader(
+            "📥 Download Your Report"
+        )
+
+        pdf_buffer = BytesIO()
+
+        document = SimpleDocTemplate(
+            pdf_buffer,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=40
+        )
+
+        styles = getSampleStyleSheet()
+
+        title_style = styles["Title"]
+        title_style.alignment = TA_CENTER
+
+        heading_style = styles["Heading2"]
+        body_style = styles["BodyText"]
+
+        story = []
+
+
+        # =========================
+        # PDF TITLE
+        # =========================
+
+        story.append(
+            Paragraph(
+                "AI Resume Analysis Report",
+                title_style
             )
+        )
 
-            pdf_buffer = BytesIO()
+        story.append(
+            Spacer(1, 20)
+        )
 
-            document = SimpleDocTemplate(
-                pdf_buffer,
-                pagesize=A4,
-                rightMargin=40,
-                leftMargin=40,
-                topMargin=40,
-                bottomMargin=40
+
+        # =========================
+        # RESUME SCORE
+        # =========================
+
+        story.append(
+            Paragraph(
+                f"<b>Resume Score:</b> {score}/100",
+                body_style
             )
+        )
 
-            styles = getSampleStyleSheet()
-
-            title_style = styles["Title"]
-            title_style.alignment = TA_CENTER
-
-            heading_style = styles["Heading2"]
-            body_style = styles["BodyText"]
-
-            story = []
+        story.append(
+            Spacer(1, 10)
+        )
 
 
-            # TITLE
+        # =========================
+        # ATS SCORE
+        # =========================
+
+        if job_description.strip():
 
             story.append(
                 Paragraph(
-                    "AI Resume Analysis Report",
-                    title_style
-                )
-            )
-
-            story.append(
-                Spacer(1, 20)
-            )
-
-
-            # RESUME SCORE
-
-            story.append(
-                Paragraph(
-                    f"<b>Resume Score:</b> {score}/100",
+                    f"<b>ATS Match Score:</b> {ats_score}/100",
                     body_style
                 )
             )
 
             story.append(
-                Spacer(1, 10)
-            )
-
-
-            # ATS SCORE
-
-            if job_description.strip():
-
-                story.append(
-                    Paragraph(
-                        f"<b>ATS Match Score:</b> {ats_score}/100",
-                        body_style
-                    )
-                )
-
-                story.append(
-                    Spacer(1, 15)
-                )
-
-
-            # SKILLS
-
-            story.append(
-                Paragraph(
-                    "Skills Detected",
-                    heading_style
-                )
-            )
-
-            if found_skills:
-
-                for skill in found_skills:
-
-                    story.append(
-                        Paragraph(
-                            "• " + escape(skill.title()),
-                            body_style
-                        )
-                    )
-
-            else:
-
-                story.append(
-                    Paragraph(
-                        "No matching skills found.",
-                        body_style
-                    )
-                )
-
-
-            story.append(
                 Spacer(1, 15)
             )
 
 
-            # MISSING SKILLS
+        # =========================
+        # SKILLS
+        # =========================
 
-            story.append(
-                Paragraph(
-                    "Recommended / Missing Skills",
-                    heading_style
-                )
+        story.append(
+            Paragraph(
+                "Skills Detected",
+                heading_style
             )
+        )
 
-            if missing_skills:
+        if found_skills:
 
-                for skill in missing_skills:
-
-                    story.append(
-                        Paragraph(
-                            "• " + escape(skill),
-                            body_style
-                        )
-                    )
-
-            else:
+            for skill in found_skills:
 
                 story.append(
                     Paragraph(
-                        "No recommended skills are missing.",
+                        "• " + escape(skill.title()),
                         body_style
                     )
                 )
 
-
-            story.append(
-                Spacer(1, 15)
-            )
-
-
-            # AI FEEDBACK
+        else:
 
             story.append(
                 Paragraph(
-                    "AI Resume Feedback",
-                    heading_style
+                    "No matching skills found.",
+                    body_style
                 )
             )
 
-            for line in ai_feedback.split("\n"):
 
-                if line.strip():
-
-                    story.append(
-                        Paragraph(
-                            escape(line),
-                            body_style
-                        )
-                    )
-
-                    story.append(
-                        Spacer(1, 5)
-                    )
+        story.append(
+            Spacer(1, 15)
+        )
 
 
-            # ATS DETAILS
+        # =========================
+        # MISSING SKILLS
+        # =========================
 
-            if job_description.strip() and ats_text:
+        story.append(
+            Paragraph(
+                "Recommended / Missing Skills",
+                heading_style
+            )
+        )
 
-                story.append(
-                    Spacer(1, 10)
-                )
+        if missing_skills:
+
+            for skill in missing_skills:
 
                 story.append(
                     Paragraph(
-                        "ATS Analysis",
-                        heading_style
+                        "• " + escape(skill),
+                        body_style
                     )
                 )
 
-                for line in ats_text.split("\n"):
+        else:
 
-                    if line.strip():
-
-                        story.append(
-                            Paragraph(
-                                escape(line),
-                                body_style
-                            )
-                        )
-
-                        story.append(
-                            Spacer(1, 5)
-                        )
-
-
-            # BUILD PDF
-
-            document.build(
-                story
+            story.append(
+                Paragraph(
+                    "No recommended skills are missing.",
+                    body_style
+                )
             )
 
-            pdf_buffer.seek(0)
 
-            pdf_data = pdf_buffer.getvalue()
+        story.append(
+            Spacer(1, 15)
+        )
 
 
-            # =========================
-            # DOWNLOAD
-            # =========================
+        # =========================
+        # AI FEEDBACK
+        # =========================
 
-            st.download_button(
-                label="📄 Download Resume Analysis Report",
-                data=pdf_data,
-                file_name="AI_Resume_Analysis_Report.pdf",
-                mime="application/pdf"
+        story.append(
+            Paragraph(
+                "AI Resume Feedback",
+                heading_style
             )
+        )
 
-            st.success(
-                "✅ Your resume report is ready!"
-            )
+
+        for line in ai_feedback.split("\n"):
+
+            if line.strip():
+
+                story.append(
+                    Paragraph(
+                        escape(line),
+                        body_style
+                    )
+                )
+
+                story.append(
+                    Spacer(1, 5)
+                )
+
+
+        # =========================
+        # BUILD PDF
+        # =========================
+
+        document.build(
+            story
+        )
+
+        pdf_buffer.seek(0)
+
+        pdf_data = pdf_buffer.getvalue()
+
+
+        # =========================
+        # DOWNLOAD BUTTON
+        # =========================
+
+        st.download_button(
+            label="📄 Download Resume Analysis Report",
+            data=pdf_data,
+            file_name="AI_Resume_Analysis_Report.pdf",
+            mime="application/pdf"
+        )
+
+        st.success(
+            "✅ Your resume report is ready!"
+        )
